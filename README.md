@@ -5,7 +5,7 @@ This repository is used for storing the WoolyAI GPU Operator HELM Chart.
 ## Installation
 
 ```bash
-helm repo add woolyai https://woolyai.github.io/woolyai-gpu-operator/
+helm repo add woolyai https://wooly-ai.github.io/woolyai-gpu-operator/index.yaml
 helm repo update
 helm install woolyai-gpu-operator woolyai/woolyai-gpu-operator
 ```
