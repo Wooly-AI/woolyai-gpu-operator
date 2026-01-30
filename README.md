@@ -143,7 +143,7 @@ woolyai-server-auto-l4-2-wqpws                    4/4     Running   0          5
 
 ### Deploying GPU Workloads
 
-Pods request shared GPUs using the `woolyai.com/gpu` resource and annotations.
+Pods request shared GPUs using the `gpu-runtime: woolyai` label and `woolyai.com/gpu` resource and annotations.
 
 #### Minimal Example
 
@@ -153,7 +153,7 @@ kind: Pod
 metadata:
   name: gpu-workload
   labels:
-    gpu-runtime: woolyai
+    gpu-runtime: woolyai  # Required
   annotations:
     woolyai.com/pod-vram: "11Gi"  # Required: VRAM needed per GPU
 spec:
@@ -173,7 +173,7 @@ kind: Pod
 metadata:
   name: gpu-workload-advanced
   labels:
-    gpu-runtime: woolyai
+    gpu-runtime: woolyai  # Required
   annotations:
     woolyai.com/pod-vram: "16000Mi"      # Required VRAM per GPU (MiB)
     woolyai.com/priority: "1"             # Priority 0-4 (0 = highest)
