@@ -418,14 +418,8 @@ For issues and feature requests, please contact WoolyAI support at support@wooly
 
 ## Troubleshooting
 
-Check Server Logs:
+### Check Server Logs:
 
 ```bash
 kubectl logs -n woolyai -l app.kubernetes.io/name=woolyai-server -c woolyai-server --follow
-```
-
-Server doesn't start
-
-```
-2026/01/30 12:27:47 reconcile policy auto-l4-2 failed: update daemonset woolyai-server-auto-l4-2: Operation cannot be fulfilled on daemonsets.apps "woolyai-server-auto-l4-2": the object has been modified; please apply your changes to the latest version and try again
 ```
