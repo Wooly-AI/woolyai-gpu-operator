@@ -152,10 +152,11 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: gpu-workload
+  labels:
+    gpu-runtime: woolyai
   annotations:
     woolyai.com/pod-vram: "11Gi"  # Required: VRAM needed per GPU
 spec:
-  schedulerName: woolyai-scheduler
   containers:
   - name: worker
     image: nvidia/cuda:13.1.1-cudnn-runtime-ubuntu22.04
@@ -171,13 +172,14 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: gpu-workload-advanced
+  labels:
+    gpu-runtime: woolyai
   annotations:
     woolyai.com/pod-vram: "16000Mi"      # Required VRAM per GPU (MiB)
     woolyai.com/priority: "1"             # Priority 0-4 (0 = highest)
     woolyai.com/exclusive-gpu-use: "false" # Set true for dedicated GPU
     woolyai.com/swap-from-vram: "true"    # Allow VRAM spill to host memory
 spec:
-  schedulerName: woolyai-scheduler
   containers:
   - name: worker
     image: nvidia/cuda:13.1.1-cudnn-runtime-ubuntu22.04
@@ -201,16 +203,6 @@ spec:
 | `woolyai.com/priority` | Priority level (0-4, where 0 is highest) | `0` |
 | `woolyai.com/exclusive-gpu-use` | Dedicated GPU mode (no sharing) | `false` |
 | `woolyai.com/swap-from-vram` | Allow VRAM spill to host memory | `true` |
-
-#### Scheduler-Populated Annotations
-
-These are set automatically by the scheduler:
-
-| Annotation | Description |
-|------------|-------------|
-| `woolyai.com/gpu-ids` | Comma-separated GPU indices assigned |
-| `woolyai.com/reserved-vram-mib` | VRAM slice promised after overcommit |
-| `woolyai.com/reservation-uid` | Unique reservation identifier |
 
 ---
 
