@@ -45,7 +45,7 @@ helm repo add woolyai https://wooly-ai.github.io/woolyai-gpu-operator
 helm repo update
 
 # 2. Create the namespace
-kubectl create namespace woolyai
+kubectl create namespace woolyai-system
 
 # 3. Create the license secret
 kubectl -n woolyai create secret generic woolyai-license \
@@ -66,7 +66,7 @@ kubectl taint node <node-name> woolyai.com/runtime=true:NoSchedule
 # 6. Install the operator
 helm install woolyai-gpu-operator woolyai/woolyai-gpu-operator \
   --set licenseSecretName=woolyai-license \
-  --namespace woolyai \
+  --namespace woolyai-system \
   --wait --timeout 300s
 
 # Add this if you want to use something other than the latest server image
@@ -84,7 +84,7 @@ helm install woolyai-gpu-operator woolyai/woolyai-gpu-operator \
   --set controller.server.image.override=woolyai/server:cuda13.1.1-latest \
   --set controller.server.image.pullPolicy=Always \
   --set licenseSecretName=woolyai-license \
-  --namespace woolyai \
+  --namespace woolyai-system \
   --wait --timeout 300s
 ```
 
@@ -95,13 +95,13 @@ helm upgrade woolyai-gpu-operator woolyai/woolyai-gpu-operator \
   --set controller.server.image.override=woolyai/server:cuda13.1.1-latest \
   --set controller.server.image.pullPolicy=Always \
   --set licenseSecretName=woolyai-license \
-  --namespace woolyai \
+  --namespace woolyai-system \
   --wait --timeout 300s
 ```
 
 > **Tip**: After changing the pull policy, you may need to restart the server pods to pull the latest image:
 > ```bash
-> kubectl delete daemonset woolyai-server-auto-l4-1 woolyai-server-auto-l4-2 -n woolyai
+> kubectl delete daemonset woolyai-server-auto-l4-1 woolyai-server-auto-l4-2 -n woolyai-system
 > kubectl delete woolynodepolicies --all
 > ```
 
@@ -124,7 +124,7 @@ kubectl taint node <node-name> woolyai.com/runtime=true:NoSchedule-
 ### Verify Installation
 
 ```bash
-kubectl get pods -n woolyai
+kubectl get pods -n woolyai-system
 ```
 
 Expected output:
@@ -298,31 +298,31 @@ The WoolyAI scheduler plugin uses a multi-phase approach:
 
 ```bash
 # View all pods
-kubectl get pods -n woolyai
+kubectl get pods -n woolyai-system
 
 # View deployments
-kubectl get deployments -n woolyai
+kubectl get deployments -n woolyai-system
 
 # View daemonsets (server pods)
-kubectl get daemonsets -n woolyai
+kubectl get daemonsets -n woolyai-system
 ```
 
 ### Diagnose Pod Issues
 
 ```bash
 # Describe a specific pod
-kubectl describe pod <pod-name> -n woolyai
+kubectl describe pod <pod-name> -n woolyai-system
 
 # Check logs for operator components
-kubectl logs -n woolyai -l app.kubernetes.io/name=woolyai-gpu-operator-controller --tail=100
-kubectl logs -n woolyai -l app.kubernetes.io/name=woolyai-gpu-operator-admission --tail=100
-kubectl logs -n woolyai -l app.kubernetes.io/name=woolyai-gpu-operator-scheduler --tail=100
+kubectl logs -n woolyai-system -l app.kubernetes.io/name=woolyai-gpu-operator-controller --tail=100
+kubectl logs -n woolyai-system -l app.kubernetes.io/name=woolyai-gpu-operator-admission --tail=100
+kubectl logs -n woolyai-system -l app.kubernetes.io/name=woolyai-gpu-operator-scheduler --tail=100
 
 # Check server pod logs
-kubectl logs -n woolyai <woolyai-server-pod-name> --tail=100
+kubectl logs -n woolyai-system <woolyai-server-pod-name> --tail=100
 
 # View recent events
-kubectl get events -n woolyai --sort-by='.lastTimestamp'
+kubectl get events -n woolyai-system --sort-by='.lastTimestamp'
 ```
 
 ### Check GPU Status
@@ -344,7 +344,7 @@ If server pods disappear or get stuck, recreate them:
 
 ```bash
 # Delete the old DaemonSets
-kubectl delete daemonset -l app.kubernetes.io/component=server -n woolyai
+kubectl delete daemonset -l app.kubernetes.io/component=server -n woolyai-system
 
 # Delete the WoolyNodePolicies to trigger recreation
 kubectl delete woolynodepolicies --all
@@ -362,7 +362,7 @@ If the Helm install times out:
 
 ```bash
 # Check what's pending
-kubectl get pods -n woolyai
+kubectl get pods -n woolyai-system
 
 # Describe problematic pods
 kubectl describe pod -n woolyai -l app.kubernetes.io/instance=woolyai-gpu-operator
@@ -415,7 +415,7 @@ kubectl delete crd gpuclasses.woolyai.dev
 kubectl delete crd nodegpustatuses.woolyai.dev
 
 # 6. Delete the namespace
-kubectl delete namespace woolyai
+kubectl delete namespace woolyai-system
 ```
 
 ---
@@ -442,5 +442,5 @@ For issues and feature requests, please contact WoolyAI support at support@wooly
 ### Check Server Logs:
 
 ```bash
-kubectl logs -n woolyai -l app.kubernetes.io/name=woolyai-server -c woolyai-server --follow
+kubectl logs -n woolyai-system -l app.kubernetes.io/name=woolyai-server -c woolyai-server --follow
 ```
