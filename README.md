@@ -59,10 +59,12 @@ kubectl label node <node-name> gpu-runtime=woolyai --overwrite
 
 # 5. Install the operator
 helm install woolyai-gpu-operator woolyai/woolyai-gpu-operator \
-  --set controller.server.image.override=woolyai/server:cuda13.1.1-latest \
   --set licenseSecretName=woolyai-license \
   --namespace woolyai \
   --wait --timeout 300s
+
+# Add this if you want to use something other than the latest server image
+# --set controller.server.image.override=woolyai/server:cuda13.1.1-latest \
 ```
 
 > **Note**: Find available server image tags at https://hub.docker.com/r/woolyai/server/tags
@@ -359,8 +361,21 @@ kubectl describe pod -n woolyai -l app.kubernetes.io/instance=woolyai-gpu-operat
 ### Complete Removal
 
 ```bash
+# Remove node labels so server is removed from the nodes
+for node in $(kubectl get nodes -l gpu-runtime=woolyai -o jsonpath='{.items[*].metadata.name}'); do
+  echo "Removing labels from $node"
+  kubectl label node "$node" \
+    gpu-runtime- \
+    woolyai.com/gpu.present- \
+    woolyai.com/gpu.count- \
+    woolyai.com/gpu.vram-
+done
+
 # 1. Uninstall the Helm release
 helm uninstall woolyai-gpu-operator -n woolyai
+
+# Remove all WoolyAI images
+sudo crictl images | grep woolyai | awk '{print $3}' | xargs -r sudo crictl rmi
 
 # 2. Delete the webhooks (if they persist)
 kubectl delete mutatingwebhookconfiguration woolyai-admission-mutating 2>/dev/null || true
@@ -377,11 +392,6 @@ kubectl delete crd woolynodepolicies.woolyai.dev
 kubectl delete crd clustergpupolicies.woolyai.dev
 kubectl delete crd gpuclasses.woolyai.dev
 kubectl delete crd nodegpustatuses.woolyai.dev
-
-# 5. Remove node labels
-kubectl label node <node-name> gpu-runtime-
-# Remove WoolyAI-added labels
-kubectl label node <node-name> woolyai.com/gpu.present- woolyai.com/gpu.count- woolyai.com/gpu.vram-
 
 # 6. Delete the namespace
 kubectl delete namespace woolyai
@@ -405,3 +415,17 @@ kubectl delete namespace woolyai
 ## Support
 
 For issues and feature requests, please contact WoolyAI support at support@woolyai.com or join our Slack at https://slack.woolyai.com/.
+
+## Troubleshooting
+
+Check Server Logs:
+
+```bash
+kubectl logs -n woolyai -l app.kubernetes.io/name=woolyai-server -c woolyai-server --follow
+```
+
+Server doesn't start
+
+```
+2026/01/30 12:27:47 reconcile policy auto-l4-2 failed: update daemonset woolyai-server-auto-l4-2: Operation cannot be fulfilled on daemonsets.apps "woolyai-server-auto-l4-2": the object has been modified; please apply your changes to the latest version and try again
+```
