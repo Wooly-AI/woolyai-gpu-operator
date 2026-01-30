@@ -383,14 +383,15 @@ kubectl describe pod -n woolyai -l app.kubernetes.io/instance=woolyai-gpu-operat
 ### Complete Removal
 
 ```bash
-# Remove node labels so server is removed from the nodes
+# Remove node labels and taints so server is removed from the nodes
 for node in $(kubectl get nodes -l gpu-runtime=woolyai -o jsonpath='{.items[*].metadata.name}'); do
-  echo "Removing labels from $node"
+  echo "Removing labels and taints from $node"
   kubectl label node "$node" \
     gpu-runtime- \
     woolyai.com/gpu.present- \
     woolyai.com/gpu.count- \
     woolyai.com/gpu.vram-
+  kubectl taint node "$node" woolyai.com/runtime=true:NoSchedule- 2>/dev/null || true
 done
 
 # 1. Uninstall the Helm release
