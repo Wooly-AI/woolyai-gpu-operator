@@ -176,7 +176,6 @@ metadata:
     woolyai.com/priority: "1"             # Priority 0-4 (0 = highest)
     woolyai.com/exclusive-gpu-use: "false" # Set true for dedicated GPU
     woolyai.com/swap-from-vram: "true"    # Allow VRAM spill to host memory
-    cuda.scheduler.io/gpu-class: "a100-shared"  # Target specific GPU class
 spec:
   schedulerName: woolyai-scheduler
   containers:
@@ -202,7 +201,6 @@ spec:
 | `woolyai.com/priority` | Priority level (0-4, where 0 is highest) | `0` |
 | `woolyai.com/exclusive-gpu-use` | Dedicated GPU mode (no sharing) | `false` |
 | `woolyai.com/swap-from-vram` | Allow VRAM spill to host memory | `true` |
-| `cuda.scheduler.io/gpu-class` | Target a specific GPUClass | - |
 
 #### Scheduler-Populated Annotations
 
