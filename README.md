@@ -4,7 +4,7 @@ A Kubernetes-native GPU operator that enables intelligent GPU sharing and multip
 
 ## Overview
 
-WoolyAI allows multiple Kubernetes pods to **share physical GPUs** through a per-node WoolyAI Server that multiplexes CUDA command streams from multiple clients. This enables higher GPU utilization compared to traditional exclusive GPU allocation.
+[WoolyAI](https://woolyai.com/) allows multiple Kubernetes pods to **share physical GPUs** through a per-node WoolyAI Server that multiplexes CUDA command streams from multiple clients. This enables higher GPU utilization compared to traditional exclusive GPU allocation.
 
 ### Architecture
 
