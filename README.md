@@ -57,7 +57,13 @@ kubectl label node <node-name> gpu-runtime=woolyai --overwrite
 # kubectl label node l4-1 gpu-runtime=woolyai --overwrite
 # kubectl label node l4-2 gpu-runtime=woolyai --overwrite
 
-# 5. Install the operator
+# 5. (Optional) Taint nodes to prevent NVIDIA/WoolyAI conflicts
+kubectl taint node <node-name> woolyai.com/runtime=true:NoSchedule
+# Example:
+# kubectl taint node l4-1 woolyai.com/runtime=true:NoSchedule
+# kubectl taint node l4-2 woolyai.com/runtime=true:NoSchedule
+
+# 6. Install the operator
 helm install woolyai-gpu-operator woolyai/woolyai-gpu-operator \
   --set licenseSecretName=woolyai-license \
   --namespace woolyai \
