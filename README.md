@@ -105,6 +105,22 @@ helm upgrade woolyai-gpu-operator woolyai/woolyai-gpu-operator \
 > kubectl delete woolynodepolicies --all
 > ```
 
+### Preventing NVIDIA/WoolyAI Conflicts
+
+WoolyAI expects to be the only GPU scheduler on nodes labeled `gpu-runtime=woolyai`. If you're running a mixed cluster with both WoolyAI and standard NVIDIA GPU workloads, taint your WoolyAI nodes to prevent conflicts:
+
+```bash
+kubectl taint node <node-name> woolyai.com/runtime=true:NoSchedule
+```
+
+The WoolyAI admission webhook automatically injects a toleration for `woolyai.com/runtime` into WoolyAI-managed pods, so they continue to schedule normally. Standard NVIDIA GPU workloads (without the toleration) will be kept off these nodes.
+
+To remove the taint later:
+
+```bash
+kubectl taint node <node-name> woolyai.com/runtime=true:NoSchedule-
+```
+
 ### Verify Installation
 
 ```bash
