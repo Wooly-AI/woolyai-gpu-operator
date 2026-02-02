@@ -47,6 +47,8 @@ helm repo update
 # 2. Create the namespace
 kubectl create namespace woolyai-system
 
+# NOTE: Do not deploy anything else in this namespace.
+
 # 3. Create the license secret
 kubectl -n woolyai-system create secret generic woolyai-license \
   --from-file=license.json=license.json
