@@ -48,7 +48,7 @@ helm repo update
 kubectl create namespace woolyai-system
 
 # 3. Create the license secret
-kubectl -n woolyai create secret generic woolyai-license \
+kubectl -n woolyai-system create secret generic woolyai-license \
   --from-file=license.json=license.json
 
 # 4. Label your GPU nodes
@@ -64,13 +64,13 @@ kubectl taint node <node-name> woolyai.com/runtime=true:NoSchedule
 # kubectl taint node l4-2 woolyai.com/runtime=true:NoSchedule
 
 # 6. Install the operator
+# Note: You can override the server image to use a different version by setting the controller.server.image.override parameter.
+# --set controller.server.image.override=woolyai/server:cuda13.1.1-latest \
 helm install woolyai-gpu-operator woolyai/woolyai-gpu-operator \
   --set licenseSecretName=woolyai-license \
   --namespace woolyai-system \
   --wait --timeout 300s
 
-# Add this if you want to use something other than the latest server image
-# --set controller.server.image.override=woolyai/server:cuda13.1.1-latest \
 ```
 
 > **Note**: Find available server image tags at https://hub.docker.com/r/woolyai/server/tags
