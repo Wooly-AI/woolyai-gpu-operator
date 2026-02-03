@@ -139,6 +139,43 @@ woolyai-server-auto-l4-1-7w7s8                    4/4     Running   0          5
 woolyai-server-auto-l4-2-wqpws                    4/4     Running   0          55s
 ```
 
+### Upgrading
+
+To upgrade the WoolyAI GPU Operator to a newer version and pull fresh images:
+
+```bash
+# 1. Update the Helm repository
+helm repo update woolyai
+
+# 2. Upgrade the operator
+helm upgrade woolyai-gpu-operator woolyai/woolyai-gpu-operator \
+  --set licenseSecretName=woolyai-license \
+  --namespace woolyai-system \
+  --wait --timeout 300s
+
+# 3. Restart operator components to pull new images
+kubectl rollout restart deployment -n woolyai-system
+
+# 4. Recreate server pods to pull new images
+kubectl delete daemonset -l app.kubernetes.io/component=server -n woolyai-system
+kubectl delete woolynodepolicies --all
+
+# The controller will automatically recreate the server DaemonSets
+```
+
+If you're using a specific server image override, include it in the upgrade:
+
+```bash
+helm upgrade woolyai-gpu-operator woolyai/woolyai-gpu-operator \
+  --set controller.server.image.override=woolyai/server:cuda13.1.1-latest \
+  --set controller.server.image.pullPolicy=Always \
+  --set licenseSecretName=woolyai-license \
+  --namespace woolyai-system \
+  --wait --timeout 300s
+```
+
+> **Note**: Setting `pullPolicy=Always` ensures the latest image is pulled even if the tag hasn't changed (e.g., when using `latest` tags).
+
 ---
 
 ## Usage Guide
