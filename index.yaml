@@ -2,6 +2,17 @@ apiVersion: v1
 entries:
   woolyai-gpu-operator:
   - apiVersion: v2
+    appVersion: 0.0.14
+    created: "2026-02-03T14:15:17.290947001Z"
+    description: WoolyAI GPU operator bundle
+    digest: 5f9bcabd2833a58af4773b3ef2b7af490fad501e9277ab122809326859c7427d
+    kubeVersion: '>=1.24.0'
+    name: woolyai-gpu-operator
+    type: application
+    urls:
+    - https://github.com/Wooly-AI/woolyai-gpu-operator/releases/download/woolyai-gpu-operator-0.0.14/woolyai-gpu-operator-0.0.14.tgz
+    version: 0.0.14
+  - apiVersion: v2
     appVersion: 0.0.13
     created: "2026-02-01T22:06:19.565493982Z"
     description: WoolyAI GPU operator bundle
@@ -144,4 +155,4 @@ entries:
     urls:
     - https://github.com/Wooly-AI/woolyai-gpu-operator/releases/download/woolyai-gpu-operator-0.0.1/woolyai-gpu-operator-0.0.1.tgz
     version: 0.0.1
-generated: "2026-02-01T22:06:19.56561204Z"
+generated: "2026-02-03T14:15:17.291054639Z"
