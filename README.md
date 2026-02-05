@@ -310,16 +310,38 @@ spec:
 
 ## Scheduling
 
-### How It Works
+### How It Differs from other GPU Scheduling
 
-The WoolyAI scheduler plugin uses a multi-phase approach:
+Other GPU schedulers allocate **whole GPUs** as discrete resources (e.g., `nvidia.com/gpu: 1`). The WoolyAI scheduler instead:
 
-1. **QueueSort** - Orders pods by priority (0-4, where 0 is highest)
-2. **PreFilter** - Parses annotations (`woolyai.com/pod-vram`, `woolyai.com/priority`, etc.)
-3. **Filter** - Validates GPU capacity, VRAM availability with overcommit, exclusivity constraints
-4. **Score** - Ranks nodes by idle GPUs, starvation percentage, VRAM headroom
-5. **Reserve** - Assigns concrete GPU IDs and persists them to pod annotations
-6. **Permit** - Confirms reservation with node server
+- **Schedules by VRAM capacity**, not GPU count — pods request memory like `woolyai.com/pod-vram: 16Gi`
+- **Assigns specific GPU IDs** on the node, not just "some GPU"
+- **Uses real-time inventory** from `NodeGPUStatus` CRs, not static `Allocatable` counts
+
+### Scheduling Pipeline
+
+The scheduler runs through these phases:
+
+| Phase | Description |
+|-------|-------------|
+| **QueueSort** | Orders pending pods by `woolyai.com/priority` (0 = highest) |
+| **PreFilter** | Parses pod annotations (`pod-vram`, `priority`, `gpu-class`) |
+| **Filter** | Eliminates nodes that can't satisfy the request (wrong GPU class, insufficient VRAM, exclusive constraints) |
+| **Score** | Ranks surviving nodes — prefers idle GPUs, avoids contention, considers GPU starvation |
+| **Reserve** | Picks specific GPU IDs and patches the pod with assignments (only if `woolyai.com/gpu-ids` is set) |
+| **Permit** | Confirms reservation with node server |
+
+### GPU Assignment Output
+
+After scheduling, the pod is patched with:
+
+```yaml
+woolyai.com/gpu-ids: "0,2"              # Physical GPU indices assigned
+woolyai.com/reserved-vram-mib: "16384"  # VRAM slice promised
+woolyai.com/reservation-uid: "abc123"   # Unique reservation ID
+```
+
+The admission webhook converts these into environment variables (`WOOLYAI_GPU_IDS`, `WOOLYAI_RESERVED_VRAM_MIB`, etc.) via Downward API, so the WoolyAI client library knows which GPUs to use without calling Kubernetes APIs.
 
 ---
 
