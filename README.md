@@ -147,7 +147,7 @@ To upgrade the WoolyAI GPU Operator to a newer version and pull fresh images:
 # 1. Update the Helm repository
 helm repo update woolyai
 
-# 2. Upgrade the operator
+# 2. Upgrade the operator (Note, you want to use the same overrides you used for the initial install)
 helm upgrade woolyai-gpu-operator woolyai/woolyai-gpu-operator \
   --set licenseSecretName=woolyai-license \
   --namespace woolyai-system \
