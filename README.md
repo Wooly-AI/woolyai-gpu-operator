@@ -73,6 +73,8 @@ helm install woolyai-gpu-operator woolyai/woolyai-gpu-operator \
   --namespace woolyai-system \
   --wait --timeout 300s
 
+# View the values that were used to install the operator
+helm get values woolyai-gpu-operator -n woolyai-system
 ```
 
 > **Note**: Find available server image tags at https://hub.docker.com/r/woolyai/server/tags
@@ -150,6 +152,13 @@ helm repo update woolyai
 # 2. Upgrade the operator (Note, you want to use the same overrides you used for the initial install)
 helm upgrade woolyai-gpu-operator woolyai/woolyai-gpu-operator \
   --set licenseSecretName=woolyai-license \
+  --set controller.image.pullPolicy=Always \
+  --set controller.server.image.pullPolicy=Always \
+  --set controller.server.inventorySidecar.image.pullPolicy=Always \
+  --set controller.server.devicePlugin.image.pullPolicy=Always \
+  --set admission.image.pullPolicy=Always \
+  --set admission.libInjector.image.pullPolicy=Always \
+  --set scheduler.image.pullPolicy=Always \
   --namespace woolyai-system \
   --wait --timeout 300s
 
@@ -161,17 +170,6 @@ kubectl delete daemonset -l app.kubernetes.io/component=server -n woolyai-system
 kubectl delete woolynodepolicies --all
 
 # The controller will automatically recreate the server DaemonSets
-```
-
-If you're using a specific server image override, include it in the upgrade:
-
-```bash
-helm upgrade woolyai-gpu-operator woolyai/woolyai-gpu-operator \
-  --set controller.server.image.override=woolyai/server:cuda13.1.1-latest \
-  --set controller.server.image.pullPolicy=Always \
-  --set licenseSecretName=woolyai-license \
-  --namespace woolyai-system \
-  --wait --timeout 300s
 ```
 
 > **Note**: Setting `pullPolicy=Always` ensures the latest image is pulled even if the tag hasn't changed (e.g., when using `latest` tags).
