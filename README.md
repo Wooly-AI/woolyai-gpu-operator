@@ -442,9 +442,10 @@ done
 # 2. Uninstall the Helm release
 helm uninstall woolyai-gpu-operator -n woolyai-system
 
-# 3. Clean up cluster-scoped resources (not removed by helm uninstall)
+# 3. Clean up cluster-scoped and cross-namespace resources (not always removed by helm uninstall)
 kubectl delete clusterrole -l app.kubernetes.io/instance=woolyai-gpu-operator 2>/dev/null || true
 kubectl delete clusterrolebinding -l app.kubernetes.io/instance=woolyai-gpu-operator 2>/dev/null || true
+kubectl delete rolebinding -n kube-system -l app.kubernetes.io/instance=woolyai-gpu-operator 2>/dev/null || true
 kubectl delete mutatingwebhookconfiguration woolyai-admission-mutating 2>/dev/null || true
 kubectl delete validatingwebhookconfiguration woolyai-admission-validating 2>/dev/null || true
 
