@@ -45,12 +45,12 @@ helm repo add woolyai https://wooly-ai.github.io/woolyai-gpu-operator
 helm repo update
 
 # 2. Create the namespace
-kubectl create namespace woolyai-system
+kubectl create namespace woolyai-gpu-operator
 
 # NOTE: Do not deploy anything else in this namespace.
 
 # 3. Create the license secret
-kubectl -n woolyai-system create secret generic woolyai-license \
+kubectl -n woolyai-gpu-operator create secret generic woolyai-license \
   --from-file=license.json=license.json
 
 # 4. Label your GPU nodes
@@ -70,11 +70,11 @@ kubectl taint node <node-name> woolyai.com/runtime=true:NoSchedule
 # --set controller.server.image.override=woolyai/server:cuda13.1.1-latest \
 helm install woolyai-gpu-operator woolyai/woolyai-gpu-operator \
   --set licenseSecretName=woolyai-license \
-  --namespace woolyai-system \
+  --namespace woolyai-gpu-operator \
   --wait --timeout 300s
 
 # View the values that were used to install the operator
-helm get values woolyai-gpu-operator -n woolyai-system
+helm get values woolyai-gpu-operator -n woolyai-gpu-operator
 ```
 
 > **Note**: Find available server image tags at https://hub.docker.com/r/woolyai/server/tags
@@ -98,7 +98,7 @@ kubectl taint node <node-name> woolyai.com/runtime=true:NoSchedule-
 ### Verify Installation
 
 ```bash
-kubectl get pods -n woolyai-system
+kubectl get pods -n woolyai-gpu-operator
 ```
 
 Expected output:
@@ -122,7 +122,7 @@ helm repo update woolyai
 # 2. Upgrade the operator (use the same overrides you used for the initial install)
 helm upgrade woolyai-gpu-operator woolyai/woolyai-gpu-operator \
   --set licenseSecretName=woolyai-license \
-  --namespace woolyai-system \
+  --namespace woolyai-gpu-operator \
   --wait --timeout 300s
 
 # The new chart version references version-pinned image tags, so Kubernetes
@@ -137,7 +137,7 @@ Each chart version automatically uses image tags matching its `appVersion`. If y
 
 ```bash
 # Roll back to the previous Helm release
-helm rollback woolyai-gpu-operator -n woolyai-system
+helm rollback woolyai-gpu-operator -n woolyai-gpu-operator
 ```
 
 To install or pin a specific chart version:
@@ -146,7 +146,7 @@ To install or pin a specific chart version:
 helm upgrade woolyai-gpu-operator woolyai/woolyai-gpu-operator \
   --version 0.1.4 \
   --set licenseSecretName=woolyai-license \
-  --namespace woolyai-system \
+  --namespace woolyai-gpu-operator \
   --wait --timeout 300s
 ```
 
@@ -157,7 +157,7 @@ If you need to override image versions independently of the chart version (e.g.,
 helm upgrade woolyai-gpu-operator woolyai/woolyai-gpu-operator \
   --set licenseSecretName=woolyai-license \
   --set imageTagSuffix=0.1.1 \
-  --namespace woolyai-system \
+  --namespace woolyai-gpu-operator \
   --wait --timeout 300s
 ```
 
@@ -168,7 +168,7 @@ This overrides all image tags (e.g., `controller-0.1.1`, `admission-0.1.1`, etc.
 helm upgrade woolyai-gpu-operator woolyai/woolyai-gpu-operator \
   --set licenseSecretName=woolyai-license \
   --set admission.libInjector.image.override=woolyai/gpu-operator:lib-injector-0.1.1 \
-  --namespace woolyai-system \
+  --namespace woolyai-gpu-operator \
   --wait --timeout 300s
 ```
 
@@ -347,31 +347,31 @@ The admission webhook converts these into environment variables (`WOOLYAI_GPU_ID
 
 ```bash
 # View all pods
-kubectl get pods -n woolyai-system
+kubectl get pods -n woolyai-gpu-operator
 
 # View deployments
-kubectl get deployments -n woolyai-system
+kubectl get deployments -n woolyai-gpu-operator
 
 # View daemonsets (server pods)
-kubectl get daemonsets -n woolyai-system
+kubectl get daemonsets -n woolyai-gpu-operator
 ```
 
 ### Diagnose Pod Issues
 
 ```bash
 # Describe a specific pod
-kubectl describe pod <pod-name> -n woolyai-system
+kubectl describe pod <pod-name> -n woolyai-gpu-operator
 
 # Check logs for operator components
-kubectl logs -n woolyai-system -l app.kubernetes.io/name=woolyai-gpu-operator-controller --tail=100
-kubectl logs -n woolyai-system -l app.kubernetes.io/name=woolyai-gpu-operator-admission --tail=100
-kubectl logs -n woolyai-system -l app.kubernetes.io/name=woolyai-gpu-operator-scheduler --tail=100
+kubectl logs -n woolyai-gpu-operator -l app.kubernetes.io/name=woolyai-gpu-operator-controller --tail=100
+kubectl logs -n woolyai-gpu-operator -l app.kubernetes.io/name=woolyai-gpu-operator-admission --tail=100
+kubectl logs -n woolyai-gpu-operator -l app.kubernetes.io/name=woolyai-gpu-operator-scheduler --tail=100
 
 # Check server pod logs
-kubectl logs -n woolyai-system <woolyai-server-pod-name> --tail=100
+kubectl logs -n woolyai-gpu-operator <woolyai-server-pod-name> --tail=100
 
 # View recent events
-kubectl get events -n woolyai-system --sort-by='.lastTimestamp'
+kubectl get events -n woolyai-gpu-operator --sort-by='.lastTimestamp'
 ```
 
 ### Check GPU Status
@@ -393,7 +393,7 @@ If server pods disappear or get stuck, recreate them:
 
 ```bash
 # Delete the old DaemonSets
-kubectl delete daemonset -l app.kubernetes.io/component=server -n woolyai-system
+kubectl delete daemonset -l app.kubernetes.io/component=server -n woolyai-gpu-operator
 
 # Delete the WoolyNodePolicies to trigger recreation
 kubectl delete woolynodepolicies --all
@@ -411,7 +411,7 @@ If the Helm install times out:
 
 ```bash
 # Check what's pending
-kubectl get pods -n woolyai-system
+kubectl get pods -n woolyai-gpu-operator
 
 # Describe problematic pods
 kubectl describe pod -n woolyai -l app.kubernetes.io/instance=woolyai-gpu-operator
@@ -464,7 +464,7 @@ kubectl delete crd gpuclasses.woolyai.dev
 kubectl delete crd nodegpustatuses.woolyai.dev
 
 # 6. Delete the namespace
-kubectl delete namespace woolyai-system
+kubectl delete namespace woolyai-gpu-operator
 ```
 
 ---
@@ -491,5 +491,5 @@ For issues and feature requests, please contact WoolyAI support at support@wooly
 ### Check Server Logs:
 
 ```bash
-kubectl logs -n woolyai-system -l app.kubernetes.io/name=woolyai-server -c woolyai-server --follow
+kubectl logs -n woolyai-gpu-operator -l app.kubernetes.io/name=woolyai-server -c woolyai-server --follow
 ```
