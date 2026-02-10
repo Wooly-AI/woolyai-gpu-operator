@@ -60,7 +60,7 @@ kubectl label node 149-118-79-27 gpu-runtime=woolyai --overwrite
 kubectl taint node 149-118-79-27 woolyai.com/runtime=true:NoSchedule
 
 # 6. Install the operator
-# Note: You can override the server image to use a different version by setting the controller.server.image.override parameter.
+# Note: You can override the server image to use a different version by setting the controller.server.image.override parameter -- defaults to cuda12.9.1-latest
 # --set controller.server.image.override=woolyai/server:cuda13.1.1-latest \
 helm install woolyai-gpu-operator woolyai/woolyai-gpu-operator \
   --set licenseSecretName=woolyai-license \
