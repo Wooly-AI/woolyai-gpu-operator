@@ -79,36 +79,6 @@ helm get values woolyai-gpu-operator -n woolyai-system
 
 > **Note**: Find available server image tags at https://hub.docker.com/r/woolyai/server/tags
 
-### Image Pull Policy
-
-By default, Kubernetes uses `IfNotPresent` for image pull policy. If you're using a `latest` tag or want to ensure you always pull the newest image (e.g., during development or after a server update), set the pull policy to `Always`:
-
-```bash
-helm install woolyai-gpu-operator woolyai/woolyai-gpu-operator \
-  --set controller.server.image.override=woolyai/server:cuda13.1.1-latest \
-  --set controller.server.image.pullPolicy=Always \
-  --set licenseSecretName=woolyai-license \
-  --namespace woolyai-system \
-  --wait --timeout 300s
-```
-
-To update an existing installation with the new pull policy:
-
-```bash
-helm upgrade woolyai-gpu-operator woolyai/woolyai-gpu-operator \
-  --set controller.server.image.override=woolyai/server:cuda13.1.1-latest \
-  --set controller.server.image.pullPolicy=Always \
-  --set licenseSecretName=woolyai-license \
-  --namespace woolyai-system \
-  --wait --timeout 300s
-```
-
-> **Tip**: After changing the pull policy, you may need to restart the server pods to pull the latest image:
-> ```bash
-> kubectl delete daemonset woolyai-server-auto-l4-1 woolyai-server-auto-l4-2 -n woolyai-system
-> kubectl delete woolynodepolicies --all
-> ```
-
 ### Preventing NVIDIA/WoolyAI Conflicts
 
 WoolyAI expects to be the only GPU scheduler on nodes labeled `gpu-runtime=woolyai`. If you're running a mixed cluster with both WoolyAI and standard NVIDIA GPU workloads, taint your WoolyAI nodes to prevent conflicts:
@@ -159,7 +129,7 @@ helm upgrade woolyai-gpu-operator woolyai/woolyai-gpu-operator \
 # automatically pulls the correct images. No pullPolicy changes needed.
 ```
 
-> **Note**: Each chart version pins image tags to its `appVersion` (e.g., `controller-0.0.15`). This means `helm upgrade` to a new chart version automatically triggers image pulls without needing to set `pullPolicy=Always`. Existing pods are safe from unexpected version drift on restarts.
+> **Note**: Each chart version pins image tags to its `appVersion` (e.g., `controller-0.1.4`). This means `helm upgrade` to a new chart version automatically triggers image pulls without needing to set `pullPolicy=Always`. Existing pods are safe from unexpected version drift on restarts.
 
 ### Rolling Back or Pinning a Specific Image Version
 
@@ -174,7 +144,7 @@ To install or pin a specific chart version:
 
 ```bash
 helm upgrade woolyai-gpu-operator woolyai/woolyai-gpu-operator \
-  --version 0.0.15 \
+  --version 0.1.4 \
   --set licenseSecretName=woolyai-license \
   --namespace woolyai-system \
   --wait --timeout 300s
