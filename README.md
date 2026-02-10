@@ -54,14 +54,10 @@ kubectl -n woolyai-gpu-operator create secret generic woolyai-license \
   --from-file=license.json=license.json
 
 # 4. Label your GPU nodes
-kubectl label node <node-name> gpu-runtime=woolyai --overwrite
-# Example:
-# kubectl label node 149-118-79-27 gpu-runtime=woolyai --overwrite
+kubectl label node 149-118-79-27 gpu-runtime=woolyai --overwrite
 
 # 5. Taint nodes to prevent NVIDIA/WoolyAI conflicts
-kubectl taint node <node-name> woolyai.com/runtime=true:NoSchedule
-# Example:
-# kubectl taint node 149-118-79-27 woolyai.com/runtime=true:NoSchedule
+kubectl taint node 149-118-79-27 woolyai.com/runtime=true:NoSchedule
 
 # 6. Install the operator
 # Note: You can override the server image to use a different version by setting the controller.server.image.override parameter.
@@ -440,7 +436,7 @@ for node in $(kubectl get nodes -l gpu-runtime=woolyai -o jsonpath='{.items[*].m
 done
 
 # 2. Uninstall the Helm release
-helm uninstall woolyai-gpu-operator -n woolyai-system
+helm uninstall woolyai-gpu-operator -n woolyai-gpu-operator
 
 # 3. Clean up cluster-scoped and cross-namespace resources (not always removed by helm uninstall)
 kubectl delete clusterrole -l app.kubernetes.io/instance=woolyai-gpu-operator 2>/dev/null || true
@@ -465,7 +461,7 @@ kubectl delete crd nodegpustatuses.woolyai.dev 2>/dev/null || true
 sudo crictl images | grep woolyai | awk '{print $3}' | xargs -r sudo crictl rmi
 
 # 7. Delete the namespace
-kubectl delete namespace woolyai-system
+kubectl delete namespace woolyai-gpu-operator
 ```
 
 ---
