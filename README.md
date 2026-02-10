@@ -56,14 +56,12 @@ kubectl -n woolyai-gpu-operator create secret generic woolyai-license \
 # 4. Label your GPU nodes
 kubectl label node <node-name> gpu-runtime=woolyai --overwrite
 # Example:
-# kubectl label node l4-1 gpu-runtime=woolyai --overwrite
-# kubectl label node l4-2 gpu-runtime=woolyai --overwrite
+# kubectl label node 149-118-79-27 gpu-runtime=woolyai --overwrite
 
 # 5. Taint nodes to prevent NVIDIA/WoolyAI conflicts
 kubectl taint node <node-name> woolyai.com/runtime=true:NoSchedule
 # Example:
-# kubectl taint node l4-1 woolyai.com/runtime=true:NoSchedule
-# kubectl taint node l4-2 woolyai.com/runtime=true:NoSchedule
+# kubectl taint node 149-118-79-27 woolyai.com/runtime=true:NoSchedule
 
 # 6. Install the operator
 # Note: You can override the server image to use a different version by setting the controller.server.image.override parameter.
@@ -430,7 +428,7 @@ kubectl describe pod -n woolyai -l app.kubernetes.io/instance=woolyai-gpu-operat
 ### Complete Removal
 
 ```bash
-# Remove node labels and taints so server is removed from the nodes
+# 1. Remove node labels and taints so server is removed from the nodes
 for node in $(kubectl get nodes -l gpu-runtime=woolyai -o jsonpath='{.items[*].metadata.name}'); do
   echo "Removing labels and taints from $node"
   kubectl label node "$node" \
@@ -441,30 +439,32 @@ for node in $(kubectl get nodes -l gpu-runtime=woolyai -o jsonpath='{.items[*].m
   kubectl taint node "$node" woolyai.com/runtime=true:NoSchedule- 2>/dev/null || true
 done
 
-# 1. Uninstall the Helm release
-helm uninstall woolyai-gpu-operator -n woolyai
+# 2. Uninstall the Helm release
+helm uninstall woolyai-gpu-operator -n woolyai-system
 
-# Remove all WoolyAI images
-sudo crictl images | grep woolyai | awk '{print $3}' | xargs -r sudo crictl rmi
-
-# 2. Delete the webhooks (if they persist)
+# 3. Clean up cluster-scoped resources (not removed by helm uninstall)
+kubectl delete clusterrole -l app.kubernetes.io/instance=woolyai-gpu-operator 2>/dev/null || true
+kubectl delete clusterrolebinding -l app.kubernetes.io/instance=woolyai-gpu-operator 2>/dev/null || true
 kubectl delete mutatingwebhookconfiguration woolyai-admission-mutating 2>/dev/null || true
 kubectl delete validatingwebhookconfiguration woolyai-admission-validating 2>/dev/null || true
 
-# 3. Delete any remaining CRD instances
-kubectl delete woolynodepolicies --all
+# 4. Delete any remaining CRD instances
+kubectl delete woolynodepolicies --all 2>/dev/null || true
 kubectl delete clustergpupolicies --all 2>/dev/null || true
 kubectl delete gpuclasses --all 2>/dev/null || true
 kubectl delete nodegpustatuses --all 2>/dev/null || true
 
-# 4. Delete the CRDs themselves
-kubectl delete crd woolynodepolicies.woolyai.dev
-kubectl delete crd clustergpupolicies.woolyai.dev
-kubectl delete crd gpuclasses.woolyai.dev
-kubectl delete crd nodegpustatuses.woolyai.dev
+# 5. Delete the CRDs themselves
+kubectl delete crd woolynodepolicies.woolyai.dev 2>/dev/null || true
+kubectl delete crd clustergpupolicies.woolyai.dev 2>/dev/null || true
+kubectl delete crd gpuclasses.woolyai.dev 2>/dev/null || true
+kubectl delete crd nodegpustatuses.woolyai.dev 2>/dev/null || true
 
-# 6. Delete the namespace
-kubectl delete namespace woolyai-gpu-operator
+# 6. (Optional) Remove cached WoolyAI images from nodes
+sudo crictl images | grep woolyai | awk '{print $3}' | xargs -r sudo crictl rmi
+
+# 7. Delete the namespace
+kubectl delete namespace woolyai-system
 ```
 
 ---
