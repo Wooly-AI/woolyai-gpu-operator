@@ -143,36 +143,64 @@ woolyai-server-auto-l4-2-wqpws                    4/4     Running   0          5
 
 ### Upgrading
 
-To upgrade the WoolyAI GPU Operator to a newer version and pull fresh images:
+To upgrade the WoolyAI GPU Operator to a newer version:
 
 ```bash
 # 1. Update the Helm repository
 helm repo update woolyai
 
-# 2. Upgrade the operator (Note, you want to use the same overrides you used for the initial install)
+# 2. Upgrade the operator (use the same overrides you used for the initial install)
 helm upgrade woolyai-gpu-operator woolyai/woolyai-gpu-operator \
   --set licenseSecretName=woolyai-license \
-  --set controller.image.pullPolicy=Always \
-  --set controller.server.image.pullPolicy=Always \
-  --set controller.server.inventorySidecar.image.pullPolicy=Always \
-  --set controller.server.devicePlugin.image.pullPolicy=Always \
-  --set admission.image.pullPolicy=Always \
-  --set admission.libInjector.image.pullPolicy=Always \
-  --set scheduler.image.pullPolicy=Always \
   --namespace woolyai-system \
   --wait --timeout 300s
 
-# 3. Restart operator components to pull new images
-kubectl rollout restart deployment -n woolyai-system
-
-# 4. Recreate server pods to pull new images
-kubectl delete daemonset -l app.kubernetes.io/component=server -n woolyai-system
-kubectl delete woolynodepolicies --all
-
-# The controller will automatically recreate the server DaemonSets
+# The new chart version references version-pinned image tags, so Kubernetes
+# automatically pulls the correct images. No pullPolicy changes needed.
 ```
 
-> **Note**: Setting `pullPolicy=Always` ensures the latest image is pulled even if the tag hasn't changed (e.g., when using `latest` tags).
+> **Note**: Each chart version pins image tags to its `appVersion` (e.g., `controller-0.0.15`). This means `helm upgrade` to a new chart version automatically triggers image pulls without needing to set `pullPolicy=Always`. Existing pods are safe from unexpected version drift on restarts.
+
+### Rolling Back or Pinning a Specific Image Version
+
+Each chart version automatically uses image tags matching its `appVersion`. If you need to roll back to a previous chart release:
+
+```bash
+# Roll back to the previous Helm release
+helm rollback woolyai-gpu-operator -n woolyai-system
+```
+
+To install or pin a specific chart version:
+
+```bash
+helm upgrade woolyai-gpu-operator woolyai/woolyai-gpu-operator \
+  --version 0.0.15 \
+  --set licenseSecretName=woolyai-license \
+  --namespace woolyai-system \
+  --wait --timeout 300s
+```
+
+If you need to override image versions independently of the chart version (e.g., to test a specific build), use `imageTagSuffix`:
+
+```bash
+# Use a specific image version across all components
+helm upgrade woolyai-gpu-operator woolyai/woolyai-gpu-operator \
+  --set licenseSecretName=woolyai-license \
+  --set imageTagSuffix=0.1.1 \
+  --namespace woolyai-system \
+  --wait --timeout 300s
+```
+
+This overrides all image tags (e.g., `controller-0.1.1`, `admission-0.1.1`, etc.) without changing the chart version itself. You can also override individual component images using the `image.override` field:
+
+```bash
+# Override a single component image
+helm upgrade woolyai-gpu-operator woolyai/woolyai-gpu-operator \
+  --set licenseSecretName=woolyai-license \
+  --set admission.libInjector.image.override=woolyai/gpu-operator:lib-injector-0.1.1 \
+  --namespace woolyai-system \
+  --wait --timeout 300s
+```
 
 ---
 
