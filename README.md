@@ -44,6 +44,9 @@ A Kubernetes-native GPU operator that enables intelligent GPU sharing and multip
 helm repo add woolyai https://wooly-ai.github.io/woolyai-gpu-operator
 helm repo update
 
+# 1.5. Validate the version of the Helm chart matches the client libraries version you want
+helm search repo woolyai
+
 # 2. Create the namespace
 kubectl create namespace woolyai-gpu-operator
 
