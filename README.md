@@ -1,4 +1,4 @@
-# WoolyAI GPU Operator
+# WoolyAI Kubernetes GPU Operator
 
 A Kubernetes-native GPU operator that enables intelligent GPU sharing and multiplexing across workloads in a cluster.
 
@@ -217,7 +217,7 @@ spec:
     image: nvidia/cuda:13.1.1-cudnn-runtime-ubuntu22.04
     resources:
       limits:
-        woolyai.com/gpu: "2"  # Request 2 GPUs
+        woolyai.com/gpu: "2"  # Request a node with a minimum of 2 GPUs
 ```
 
 ### Pod Annotations Reference
