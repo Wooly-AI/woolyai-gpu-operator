@@ -61,24 +61,26 @@ flowchart TB
 
 Typical cluster layout: NVIDIA operator (or the same components from another path) on GPU nodes first. Then choose per node pool whether you stay on exclusive or NVIDIA-advanced sharing (MIG, time-slicing), or install Wooly on dedicated pools with taints so other GPU models do not fight the same hardware.
 
-### Architecture
+### WoolyAI GPU Operator Architecture
+
+The WoolyAI GPU Operator is a Helm chart that installs the following components:
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    Control Plane                            │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────────┐  │
-│  │  Scheduler   │  │  Controller  │  │ Admission Webhook│  │
-│  │   Plugin     │  │  (Operator)  │  │  (Pod Mutation)  │  │
-│  └──────────────┘  └──────────────┘  └──────────────────┘  │
-└─────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│                    Control Plane                             │
+│  ┌──────────────┐  ┌──────────────┐  ┌───────────────────┐   │
+│  │  Scheduler   │  │  Controller  │  │ Admission Webhook │   │
+│  │   Plugin     │  │  (Operator)  │  │  (Pod Mutation)   │   │
+│  └──────────────┘  └──────────────┘  └───────────────────┘   │
+└──────────────────────────────────────────────────────────────┘
                            │
                            ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                    Node Components                          │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────────┐  │
-│  │ WoolyAI      │  │ Node Agent   │  │ Device Plugin    │  │
-│  │ Server       │  │ (DaemonSet)  │  │ (GPU Advertise)  │  │
-│  └──────────────┘  └──────────────┘  └──────────────────┘  │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────────┐   │
+│  │ WoolyAI      │  │ Node Agent   │  │ Device Plugin    │   │
+│  │ Server       │  │ (DaemonSet)  │  │ (GPU Advertise)  │   │
+│  └──────────────┘  └──────────────┘  └──────────────────┘   │
 └─────────────────────────────────────────────────────────────┘
 ```
 
