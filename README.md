@@ -1,10 +1,65 @@
 # WoolyAI Kubernetes GPU Operator
 
-A Kubernetes-native GPU operator that enables intelligent GPU sharing and multiplexing across workloads in a cluster.
+This is the Kubernetes GPU Operator for WoolyAI. It is a Helm chart that installs the WoolyAI Server on GPU nodes and injects the WoolyAI libraries into pods that request GPU resources. In order to use WoolyAI, you must first understand how it fits in to the current GPU scheduling landscape as a new GPU consumption method. Let's start with defining the Kubernetes Nvidia GPU Operator.
 
-## Overview
+## About the Kubernetes Nvidia GPU Operator
 
-[WoolyAI](https://woolyai.com/) allows multiple Kubernetes pods to **share physical GPUs** through a per-node WoolyAI Server that multiplexes CUDA command streams from multiple clients. This enables higher GPU utilization compared to traditional exclusive GPU allocation.
+The [NVIDIA GPU Operator](https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/latest/index.html) is a set of Kubernetes components that installs and manages the NVIDIA stack on GPU nodes: drivers, the GPU device plugin, Container Toolkit, node labeling (GFD), and DCGM monitoring. It replaces hand-built node setup so the cluster can schedule GPU pods reliably. You can think of the NVIDIA GPU Operator as focusing on **getting the node ready**.
+
+By default, creation of a pod with the NVIDIA Operator will assign a single GPU to a single pod and prevent anything else from using it. However, it also has **advanced ways to expose GPUs to more pods**, including [Multi-Instance GPU (MIG)](https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/latest/gpu-operator-mig.html) and [time-slicing](https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/latest/gpu-sharing.html).
+
+- MIG splits a physical GPU into **fixed hardware partitions** that look like separate devices to the scheduler.
+- Time-slicing defines **replicas** of a GPU so more than one pod can attach to the **same physical card** and interleave via GPU time-slicing ([NVIDIA’s comparison](https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/latest/gpu-sharing.html) notes the tradeoff versus MIG isolation). 
+
+All three of these approaches come with tradeoffs and downsides.
+
+## How the WoolyAI Kubernetes GPU Operator fits in
+
+The [WoolyAI GPU Operator](https://github.com/Wooly-AI/woolyai-gpu-operator) works alongside the Nvidia GPU Operator and exposes a **different approach than MIG or time-slicing** for GPU sharing. Wooly aims **beyond time-slicing and MIG** with **priority-aware dynamic GPU SM core allocation**, **Dedup of model weights in VRAM**, and **VRAM Overcommit with smart swapping**. Wooly expects **NVIDIA drivers already on the node**; it does not replace the NVIDIA operator's role.
+
+The WoolyAI GPU Operator does several things, but primarily it ensures the WoolyAI Server is running on each GPU node and handles injecting the WoolyAI libraries needed to talk to the WoolyAI Server into pods that request GPU resources.
+
+In practice you pick **one consumption method per pool** (exclusive GPU, MIG, time-slicing, or Wooly). Mixed schedulers or overlapping claims on the same silicon need taints and labels so jobs do not collide. Wooly pools typically use taints so standard `nvidia.com/gpu`, MIG, or time-sliced workloads stay off those nodes unless you designed an exception.
+
+## The Four Common Consumption Methods
+
+This chart shows the *four common consumption methods*: one exclusive path, two [NVIDIA-documented](https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/latest/index.html) sharing styles ([MIG](https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/latest/gpu-operator-mig.html), [time-slicing](https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/latest/gpu-sharing.html)), and WoolyAI.
+
+```mermaid
+%%{init: {"flowchart": {"htmlLabels": true, "useMaxWidth": true}}}%%
+flowchart TB
+  start(["GPU nodes<br/>in cluster"])
+  n1["NVIDIA operator<br/>install"]
+  n2["Drivers on<br/>each node"]
+  n3["Container Toolkit<br/>ready"]
+  n4["Device plugin<br/>advertises GPUs"]
+  ready(["GPUs appear<br/>schedulable"])
+  classic["Pod requests<br/>nvidia.com/gpu"]
+  exclusive["One pod holds<br/>each whole GPU"]
+  one_at_a_time(["No sharing that GPU<br/>until the pod ends"])
+  mig1["Configure MIG<br/>on supported GPUs"]
+  mig2([Pods get fixed<br/>hardware partitions])
+  ts1["Enable time-slicing<br/>in operator config"]
+  ts2([Multiple pods<br/>time-multiplex<br/>one physical GPU])
+  w1["Install Wooly<br/>operator"]
+  w2["Wooly server<br/>starts on nodes"]
+  w3["Pods request<br/>woolyai.com/gpu<br/>and VRAM"]
+  w4((Many pods share<br/>the same GPUs with <br/>dynamic core<br />allocation and <br/>VRAM overcommit))
+  start --> n1 --> n2 --> n3 --> n4 --> ready
+  ready --> classic --> exclusive --> one_at_a_time
+  ready --> mig1 --> mig2
+  ready --> ts1 --> ts2
+  ready --> w1 --> w2 --> w3 --> w4 
+```
+
+| Method | How users think about it | Sharing style |
+| --- | --- | --- |
+| **Whole GPUs** (`nvidia.com/gpu`) | One discrete GPU per pod while it runs | No sharing of the GPUs |
+| **MIG** ([NVIDIA GPU Operator](https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/latest/gpu-operator-mig.html)) | Several smaller “GPUs” carved in hardware | Fixed partitions, not elastic |
+| **Time-slicing** ([NVIDIA GPU Operator](https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/latest/gpu-sharing.html)) | Time-multiplexed interleaving on the same silicon | Full GPU allocated for the multiplexed time slot
+| **Wooly** (separate operator) | Many pods per GPUs with priorities, fractional core allocation, and VRAM overcommit | Concurrent core sharing and elastic redistribution |
+
+Typical cluster layout: NVIDIA operator (or the same components from another path) on GPU nodes first. Then choose per node pool whether you stay on exclusive or NVIDIA-advanced sharing (MIG, time-slicing), or install Wooly on dedicated pools with taints so other GPU models do not fight the same hardware.
 
 ### Architecture
 
