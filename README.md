@@ -113,7 +113,7 @@ kubectl create namespace woolyai-gpu-operator
 kubectl -n woolyai-gpu-operator create secret generic woolyai-license \
   --from-file=license.json=license.json
 
-# 4. Label your GPU nodes
+# 4. Label your GPU nodes (this tells wooly operator to start the woolyai server on the node)
 kubectl label node 149-118-79-27 gpu-runtime=woolyai --overwrite
 
 # 5. Taint nodes to prevent NVIDIA/WoolyAI conflicts
