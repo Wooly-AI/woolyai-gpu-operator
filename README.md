@@ -293,6 +293,19 @@ spec:
 | `woolyai.com/exclusive-gpu-use` | Dedicated GPU mode (no sharing) | `false` |
 | `woolyai.com/swap-from-vram` | Allow VRAM spill to host memory | `true` |
 
+#### How VRAM Overcommit and Swap Work Together
+
+- `defaultVramOvercommitPercent` / `vramOvercommitPercent` control scheduler VRAM headroom.
+  - `0` = strict physical VRAM.
+  - `20` = scheduler can place up to `120%` VRAM for swappable workloads.
+  - `50` = up to `150%`, and so on.
+  - Node label equivalent: `woolyai.com/vram-overcommit-percent=<percent>`.
+- `woolyai.com/swap-from-vram` controls per-pod swap behavior.
+  - `"true"` (default): workload is swappable and can use overcommit headroom.
+  - `"false"`: workload is not swappable; scheduler uses stricter fit for that pod.
+- In operator-managed pods, set the annotation (not env vars). Admission injects
+  `WOOLYAI_SWAP_FROM_VRAM` from the pod annotation automatically.
+
 ---
 
 ## Configuration
@@ -319,6 +332,9 @@ spec:
   defaultVramOvercommitPercent: 20
 ```
 
+`defaultVramOvercommitPercent` is a percentage of extra VRAM headroom per GPU.
+For example, `20` means `100% + 20% = 120%` effective schedulable VRAM.
+
 ### WoolyNodePolicy
 
 Configure per-node concurrency limits:
@@ -334,6 +350,13 @@ spec:
   maxClientsPerGPU: 4
   maxClientsPerNode: 16
   vramOvercommitPercent: 30
+```
+
+`vramOvercommitPercent` overrides the cluster default for matching nodes.
+You can also set the equivalent node label directly:
+
+```bash
+kubectl label node <gpu-node> woolyai.com/vram-overcommit-percent=30 --overwrite
 ```
 
 ### GPUClass
